@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Kontakt.io Data Stream WebSocket Viewer</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+    </head>
+    <body>
+        <div class="container" id="app">
+            <div class="jumbotron">
+                <h1 class="display-5"><i class="fa fa-map-marker fa-lg" aria-hidden="true"></i> Kontakt.io Data Stream WebSocket Viewer <span class="badge badge-success">0.4</span></h1>
+                <p class="lead">For quick n' dirty testing and demonstrations</p>
+                <hr class="my-4">
+                <p>WebSocket streams allow to get real-time data from Kontakt.io Location Engine. This tool should make getting familar with this technology quicker and easier. It's also meant to help with basic troubleshooting.</p>
+                <p>For more technical details, please click the button below.</p>
+                <a class="btn btn-primary btn-lg" href="https://developer.kontakt.io/backend/le/monitoring/" role="button"><i class="fa fa-book fa-lg" aria-hidden="true"></i>  Learn more</a>
+            </div>
+
+            <h2>Setup:</h2>
+            <form>
+                <div class="form-group">
+                    <label class="col-form-label" for="env">Environment:</label>
+                    <select id="env" class="form-control" v-model="env" v-bind:disabled="streaming">
+                        <option value="production">Production</option>
+                        <option value="accept">Accept</option>
+                        <option value="test">Test</option>
+                    </select>
+
+                    <label class="col-form-label" for="streamType">Stream type:</label>
+                    <select id="streamType" class="form-control" v-model="streamType" v-bind:disabled="streaming">
+                        <option disabled value="">Please select one…</option>
+                        <option value="presence">Presence</option>
+                        <option value="accelerometer">Accelerometer</option>
+                        <option value="sensor">Other sensors</option>
+                        <option value="health">Beacon health</option>
+                        <option value="button">Button clicked</option>
+                    </select>
+
+                    <label class="col-form-label" for="apikey">API Key:</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fa fa-key" aria-hidden="true"></i></span>
+                        </div>
+                        <input id="apikey" class="form-control" type="text" name="apikey" placeholder="Enter your API Key" v-model="api_key" v-bind:disabled="streaming">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-outline-primary" v-bind:disabled="!isDefaultAPIKeyAvailable" v-on:click="loadDefault('api-key')"><i class="fa fa-upload" aria-hidden="true"></i></button>
+                            <button type="button" class="btn btn-outline-success" v-bind:disabled="!isApiKeyOK" v-on:click="saveDefault('api-key')"><i class="fa fa-download" aria-hidden="true"></i></button>
+                            <button type="button" class="btn btn-outline-danger" v-bind:disabled="!isDefaultAPIKeyAvailable" v-on:click="deleteDefault('api-key')"><i class="fa fa-trash" aria-hidden="true"></i></button>
+                        </div>
+                    </div>
+                    <small class="form-text text-muted"><a href="https://support.kontakt.io/hc/en-gb/articles/201628731">How do I find my API Key?</a></small>
+                    
+                    <label class="col-form-label" for="source">Data source:</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fa fa-feed" aria-hidden="true"></i></span>
+                        </div>
+                        <input id="source" class="form-control" type="text" name="source" placeholder="Unique ID or Venue ID" v-model="source" v-bind:disabled="streaming">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-outline-primary" v-bind:disabled="!isDefaultSourceAvailable" v-on:click="loadDefault('source')"><i class="fa fa-upload" aria-hidden="true"></i></button>
+                            <button type="button" class="btn btn-outline-success"v-bind:disabled="!isSourceOK" v-on:click="saveDefault('source')"><i class="fa fa-download" aria-hidden="true"></i></button>
+                            <button type="button" class="btn btn-outline-danger" v-bind:disabled="!isDefaultSourceAvailable" v-on:click="deleteDefault('source')"><i class="fa fa-trash" aria-hidden="true"></i></button>
+                        </div>
+                    </div>
+                    <small class="form-text text-muted">Beacon's or Gateway's Unique ID, or Venue ID.</small>
+                </div>
+
+                <button type="button" class="btn btn-danger" v-if="streaming" v-on:click="stopStreaming"><i class="fa fa-pause fa-lg" aria-hidden="true"></i>  Stop</button>
+                <button type="button" class="btn btn-primary" v-else v-on:click="startStreaming" v-bind:disabled="startButtonDisabled"><i class="fa fa-play fa-lg" aria-hidden="true"></i>  Start</button>
+            </form>
+            
+            <hr class="my-4">
+            <h2 id="results"><i v-if="streaming" class="fa fa-spinner fa-pulse fa-lg fa-fw"></i><i v-else class="fa fa-file-text-o fa-lg fa-fw" aria-hidden="true"></i> Results:</h2>
+            <form v-if="streaming && streamType === 'presence'">
+                <div class="form-group">
+                    <label class="col-form-label" for="query">Filter a Tracking ID:</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fa fa-key" aria-hidden="true"></i></span>
+                        </div>
+                        <input id="query" class="form-control" type="text" name="query" placeholder="Tracking ID" v-model="presenceQuery" v-bind:disabled="!streaming">
+                    </div>
+                </div>
+            </form>
+            <component v-bind:is="dataView" v-bind:data="items" v-bind:sourceid="source" v-bind:query="presenceQuery"></component>
+        </div>
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+        <script src="https://use.fontawesome.com/f09d8f8a6f.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@4.0.7/lib/stomp.min.js" integrity="sha256-Y0potzuRMshtqfjByPtbSCfNcZPoiqSTHIexXqeZpF0=" crossorigin="anonymous"></script>
+        <script src="resources/main.js"></script>
+    </body>
+</html>
