@@ -57,7 +57,7 @@ var vm = new Vue({
         },
         source: function (newValue) {
             // TODO: Add MAC address as an acceptable source value
-            if ((newValue.length >= 4 && newValue.length <= 6) || newValue.length === 36) {
+            if ((newValue.length >= 4 && newValue.length <= 6) || newValue.length === 17 || newValue.length === 36) {
                 this.isSourceOK = true;
             } else {
                 this.isSourceOK = false;
@@ -69,7 +69,7 @@ var vm = new Vue({
             switch (this.streamType) {
                 case 'presence':
                     this.dataView = this.streamType + 'View';
-                    if (this.source.length > 6) {
+                    if (this.source.length > 17) {
                         return '/stream/' + this.source + '/' + this.streamType;
                     } else {
                         return '/presence/stream/' + this.source;
