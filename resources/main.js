@@ -56,8 +56,7 @@ var vm = new Vue({
             }
         },
         source: function (newValue) {
-            // TODO: Add MAC address as an acceptable source value
-            if ((newValue.length >= 4 && newValue.length <= 6) || newValue.length === 17 || newValue.length === 36) {
+            if (newValue.length >= 4) {
                 this.isSourceOK = true;
             } else {
                 this.isSourceOK = false;
@@ -78,6 +77,7 @@ var vm = new Vue({
                 case 'sensor':
                 case 'health':
                 case 'button':
+                case 'all':
                     this.dataView = this.streamType + 'View';
                     return '/stream/' + this.source + '/' + this.streamType;
                 default:
@@ -244,6 +244,21 @@ var vm = new Vue({
                         <div class="card-body">\
                             <h4 class="card-title"><span class="text-monospace">{{ sourceid }}</span></h4>\
                             <p class="card-text"><i class="fa fa-clock-o fa-lg fa-fw" aria-hidden="true"></i> {{ data.deviceUtcTime }}<br><i class="fa fa-battery-three-quarters fa-lg fa-fw" aria-hidden="true"></i> {{ data.batteryLevel }}%<br><i class="fa fa-podcast fa-lg fa-fw" aria-hidden="true"></i> <span class="text-monospace">{{ data.sourceId }}</span></p>\
+                        </div>\
+                    </div>'
+        },
+        allView: {
+            props: ['data', 'sourceid'],
+            computed: {
+                batteryLevel: function () {
+                    // TODO: Implement this
+                }
+            },
+            template: '<div class="card text-white bg-success mb-3" style="max-width: 20rem;">\
+                        <div class="card-header"><i class="fa fa-heartbeat fa-lg" aria-hidden="true"></i> Telemetry</div>\
+                        <div class="card-body">\
+                            <h4 class="card-title"><span class="text-monospace">{{ sourceid }}</span></h4>\
+                            <p class="card-text">{{ data }}</span></p>\
                         </div>\
                     </div>'
         },
